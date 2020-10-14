@@ -11,5 +11,6 @@
 !missing.mran.dates.csv
 !*.R
 *.Rout
+!README.md
 
 
