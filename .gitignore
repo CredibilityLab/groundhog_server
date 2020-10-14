@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!cran.toc.rds
+!cran.toc.csv
+!cran.times.rds
+!cran.times.csv
+!missing.mran.dates.rds
+!missing.mran.dates.csv
+!*.R
+*.Rout
+
+
