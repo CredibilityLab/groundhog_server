@@ -61,6 +61,8 @@
 #5 Combine them
     installation.times=rbind(add.times,existing.times)
     
+	rownames(installation.times)=c()
+
 #6 SAVE dataset with all installation times
       write.csv(installation.times,path.file.csv,row.names=FALSE)
 	saveRDS(installation.times,path.file.rds,version=2,compress = "xz")                       #In .rds format, version=2 is for backwards compatibility
