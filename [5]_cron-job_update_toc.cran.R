@@ -1,6 +1,6 @@
 #CRON SCRIPT TO UPDATE CRAN.TOC.CSV
 
-#last update: 2020 10 14
+#last update: 2020 10 19
 
 #Read RDS file in CRAN listing available pacakges, adds new to cran.toc
     #https://cran.r-project.org/web/packages/packages.rds
@@ -10,11 +10,12 @@
 #########################################################################################
 
 	today=Sys.Date()
-	path.file.rds ="cran.toc.rds"
+	path.file.rds = "cran.toc.rds"
+	
 	path.today.backup.rds=paste0("backups/cran.toc ",today,".rds") 
 	path.file.csv="cran.toc.csv"
 
-	
+
 
 #1 Load existing existing.toc
    
@@ -24,7 +25,7 @@
 	
 
 #2 Load current CRAN packages, bypassing  {tools}
-       con=url("https://cran.r-project.org/web/packages/packages.rds")  #RDS file with all current packages
+      con=url("https://cran.r-project.org/web/packages/packages.rds")  #RDS file with all current packages
       ap=data.frame(readRDS(con))
       close(con)
 
@@ -43,7 +44,7 @@
        #Write functions 
          no.paren=function(x)     gsub("\\s*\\([^\\)]+\\)","",as.character(x)) #Kill the parenthense 
          no.breakline=function(x) gsub("\\n","",as.character(x))           #Kill the \n 
-		     no.space=function(x)     gsub(" ","",as.character(x))             #Kill the space
+		 no.space=function(x)     gsub(" ","",as.character(x))             #Kill the space
          clean=function(x) no.space(no.paren(no.breakline(x)))             #Kills all three 
             
          
@@ -87,15 +88,55 @@
 	rownames(existing.toc)=c()
 	
 #6 Replace NA with ""
-		for (k in 1:7) {
+		for (k in 3:6) {
 		existing.toc[,k]=ifelse(is.na(existing.toc[,k]),"",existing.toc[,k])
 		}
 
-  
-#6 Save toc
+#7 Evaluate if file remains OK
+	
+	 #7.1 Function that looks for all orphan deps in a row of cran.toc.rds
+        get_orphan_dep=function (k,df)
+        {
+        #put together the different dependency types
+         deps=paste0( df$Imports[k] , ',' , df$Depends[k] , ',' , df$Suggests[k],  ',' , df$LinkingTo[k])
+        
+        #Turn to vector
+         deps_vector=strsplit(deps,",")[[1]]
+         deps_vector=deps_vector[deps_vector!='']
+         
+        #Find dependencies not included in cran toc
+         deps_nocran = deps_vector [!deps_vector %in% existing.toc$Package]
+        
+        #Find remaining dependencies not in base R
+         deps_nobase = deps_nocran [!deps_nocran %in% base]
+         
+        #Return reaminig 
+         return (deps_nobase)
+      }
+	
+        
+  #7.2 Run it on new rows, saving infomation on what package it is and what dependcies it does not have
+        base=rownames(installed.packages(priority="base"))
+        non_cran_alert=""
+        for (k in 1:nrow(ap.add))
+        {
+        orphan_dep_array=get_orphan_dep(k,ap.add)
+        orphan_dep=paste0(orphan_dep_array,collapse=',')
+        if (length(orphan_dep_array)>0) non_cran_alert=paste0(non_cran_alert,"\n",today, " - package:",ap.add$Package[k]," was added to cran.toc.rds and has these dependecies not on CRAN: ",orphan_dep)
+        }
+        
+ 
+        
+        
+#8 Save toc
 	#Sort from newest to oldest to facilitate showing differential rows in PHP
 	existing.toc=existing.toc[order(existing.toc$Published,decreasing=TRUE),]
     saveRDS(existing.toc,path.file.rds,version=2,compress = "xz")      #In .rds format, version=2 is for backwards compatibility
  	write.csv(existing.toc, file = path.file.csv,row.names=FALSE)      #Uncompressed for showing in the PHP feedback after cron job
 
-		
+#9 Save	Groundhog version
+	groundhog_version=as.character(subset(ap,Package=='groundhog')$Version)
+	groundhog_version
+	fileConn<-file("groundhog_version.txt")
+	writeLines(c(groundhog_version), fileConn)
+	close(fileConn)
