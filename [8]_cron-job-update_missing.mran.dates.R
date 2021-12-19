@@ -1,8 +1,31 @@
 
 
-  rm(list = ls())
+	rm(list = ls())
+	
 
-  library('XML')                                       #library to read files in snapshot directory
+
+#Off public_html path to home directory with wasabi credentials and R library
+	home_path = dirname(dirname(getwd()))
+	.libPaths(file.path(home_path, "/R/lib/"))
+
+#Load packages
+	library(aws.s3)
+	library('XML')           
+
+#Setup wasbi credentials to save directly to bucket
+	home_path = dirname(dirname(getwd()))
+	credentials.list = readRDS(file.path(home_path,"wasabi_credentials.rds"))
+	Sys.setenv(
+			'AWS_S3_ENDPOINT' = credentials.list$endpoint,
+			"AWS_ACCESS_KEY_ID" = credentials.list$key,
+			"AWS_SECRET_ACCESS_KEY" = credentials.list$secret,
+			"AWS_DEFAULT_REGION" = credentials.list$default_region
+			)
+	
+
+
+
+	#library to read files in snapshot directory
   URL="https://cran.microsoft.com/snapshot/"           #URL to directory
   rows <- scan(URL,what='character')                   #Read the directory
   dates.listed1=getHTMLLinks(rows)                     #Extract directories (one per date)
@@ -31,4 +54,11 @@
   }
 
   
+  
+#Save to wasabi
+		put_object(
+		file = "missing.mran.dates.rds", 
+        object = "missing.mran.dates.rds", 
+        bucket = "groundhog"
+        )
   
