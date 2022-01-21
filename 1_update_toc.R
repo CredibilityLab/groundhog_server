@@ -67,7 +67,7 @@
        #Write functions 
          no.paren=function(x)     gsub("\\s*\\([^\\)]+\\)","",as.character(x)) #Kill the parenthense 
          no.breakline=function(x) gsub("\\n","",as.character(x))           #Kill the \n 
-		 no.space=function(x)     gsub(" ","",as.character(x))             #Kill the space
+	    	 no.space=function(x)     gsub(" ","",as.character(x))             #Kill the space
          clean=function(x) no.space(no.paren(no.breakline(x)))             #Kills all three 
             
          
